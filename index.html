@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR" x-data="app()" x-init="init()">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feliz Aniversario</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- GSAP + plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display:  ['Playfair Display', 'serif'],
+            serif:    ['Cormorant Garamond', 'serif'],
+            sans:     ['DM Sans', 'sans-serif'],
+          },
+          colors: {
+            rose:   { DEFAULT: '#f0a9b8', light: '#fce8ee', dark: '#d4728a', deeper: '#b5516c' },
+            cream:  { DEFAULT: '#fdf6ef', warm: '#f7ede2' },
+            lilac:  { DEFAULT: '#c9b8e8', light: '#ede7f6', dark: '#9c82c8' },
+            blush:  { DEFAULT: '#f7c5cf', soft: '#fde8ed' },
+            sage:   { DEFAULT: '#b8d4c9', light: '#e8f4f0' },
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #fdf6ef;
+      color: #3d2b35;
+    }
+
+    /* ── Screens ── */
+    .screen {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      will-change: opacity, transform;
+    }
+
+    /* ── Noise texture overlay ── */
+    .noise::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 1;
+    }
+
+    /* ── Grain background ── */
+    #screen-door {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 40%, #fce8ee 0%, #fdf0f5 40%, #f7ede2 100%);
+    }
+    #screen-party {
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 35%, #fce8ee 0%, #fdf6ef 50%, #ede7f6 100%);
+    }
+    #screen-letter {
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 40%, #ede7f6 0%, #fdf6ef 55%, #fce8ee 100%);
+      overflow-y: auto;
+    }
+
+    /* ── Door ── */
+    .door-outer {
+      position: relative;
+      width: clamp(200px, 30vw, 320px);
+      aspect-ratio: 0.55;
+      perspective: 1200px;
+    }
+    .door-frame-border {
+      position: absolute; inset: 0;
+      border-radius: 12px 12px 4px 4px;
+      background: linear-gradient(160deg, #d4a882 0%, #b8835a 50%, #9c6640 100%);
+      box-shadow: 0 20px 60px rgba(60,30,20,.25), 0 4px 12px rgba(60,30,20,.15);
+    }
+    .door-panel {
+      position: absolute; inset: 6px 6px 6px 6px;
+      border-radius: 8px 8px 2px 2px;
+      background: linear-gradient(150deg, #c8956c 0%, #a97040 60%, #8c5530 100%);
+      transform-origin: left center;
+      transform-style: preserve-3d;
+      cursor: pointer;
+      will-change: transform;
+    }
+    .door-panel::before, .door-panel::after {
+      content: '';
+      position: absolute;
+      left: 14%; right: 14%;
+      border-radius: 4px;
+      border: 2px solid rgba(255,220,180,.18);
+      background: rgba(0,0,0,.06);
+    }
+    .door-panel::before { top: 8%; height: 28%; }
+    .door-panel::after  { top: 42%; bottom: 10%; }
+
+    .door-knob {
+      position: absolute;
+      right: 16%; top: 53%;
+      width: clamp(10px, 1.8vw, 16px);
+      height: clamp(10px, 1.8vw, 16px);
+      background: radial-gradient(circle at 35% 30%, #ffe0a0, #c8960c);
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,.3), inset 0 1px 2px rgba(255,255,255,.4);
+      transform: translateY(-50%);
+    }
+    .door-scene-bg {
+      position: absolute; inset: 0;
+      border-radius: 8px 8px 2px 2px;
+      background: radial-gradient(ellipse at 50% 60%, #fff5e6, #ffe4cc);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .door-label {
+      position: absolute;
+      bottom: 22%;
+      width: 100%;
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(13px, 2.2vw, 18px);
+      color: rgba(255,240,210,.9);
+      letter-spacing: .04em;
+      text-shadow: 0 1px 4px rgba(0,0,0,.35);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* hover glow on door */
+    .door-outer:hover .door-panel {
+      box-shadow: 0 0 0 2px rgba(255,200,150,.35);
+    }
+
+    /* ── Cat image ── */
+    .cat-img {
+      width: clamp(220px, 38vw, 380px);
+      height: auto;
+      object-fit: cover;
+      border-radius: 24px;
+      box-shadow: 0 24px 64px rgba(180,90,120,.2), 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    /* ── Music toggle ── */
+    .music-btn {
+      position: fixed; top: 20px; right: 20px; z-index: 200;
+      width: 42px; height: 42px;
+      background: rgba(255,255,255,.65);
+      border: 1.5px solid rgba(200,150,170,.4);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform .2s, background .2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    }
+    .music-btn:hover { transform: scale(1.1); background: rgba(255,255,255,.9); }
+    .music-btn svg   { width: 18px; height: 18px; }
+
+    /* ── Pill button ── */
+    .btn-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: clamp(12px, 1.8vh, 16px) clamp(28px, 5vw, 48px);
+      border-radius: 100px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(13px, 1.8vw, 15px);
+      font-weight: 500;
+      letter-spacing: .04em;
+      cursor: pointer;
+      border: none;
+      transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+      user-select: none;
+    }
+    .btn-pill:hover  { transform: translateY(-3px) scale(1.03); }
+    .btn-pill:active { transform: translateY(0) scale(.98); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #d4728a 0%, #b5516c 100%);
+      color: #fff;
+      box-shadow: 0 8px 28px rgba(180,80,108,.35);
+    }
+    .btn-primary:hover { box-shadow: 0 14px 36px rgba(180,80,108,.45); }
+
+    .btn-ghost {
+      background: rgba(255,255,255,.7);
+      color: #7a4a5a;
+      border: 1.5px solid rgba(200,150,170,.35);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 14px rgba(0,0,0,.06);
+    }
+
+    /* ── Envelope ── */
+    .envelope-wrap {
+      position: relative;
+      width: clamp(160px, 26vw, 220px);
+      cursor: pointer;
+    }
+    .envelope-wrap:hover svg { filter: drop-shadow(0 8px 20px rgba(180,80,108,.3)); }
+    .envelope-wrap svg { transition: filter .3s; }
+
+    /* ── Note card ── */
+    .note-card {
+      background: rgba(255,252,248,.95);
+      border: 1px solid rgba(200,170,190,.2);
+      border-radius: 20px;
+      padding: clamp(28px, 5vw, 52px);
+      box-shadow:
+        0 2px 0 rgba(255,255,255,.8) inset,
+        0 24px 64px rgba(180,100,140,.12),
+        0 8px 24px rgba(0,0,0,.06);
+      max-width: 580px; width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .note-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #f0a9b8, #c9b8e8, #f0a9b8);
+    }
+
+    .note-line {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(15px, 2.2vw, 19px);
+      line-height: 1.95;
+      color: #4a3040;
+      min-height: 1.5em;
+    }
+    .note-line.typing::after {
+      content: '';
+      display: inline-block;
+      width: 1.5px; height: 1em;
+      background: #d4728a;
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: cursorBlink .75s step-end infinite;
+    }
+    @keyframes cursorBlink { 50% { opacity: 0; } }
+
+    .note-final {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(14px, 1.9vw, 17px);
+      font-style: italic;
+      color: #9c6880;
+      line-height: 1.9;
+      border-top: 1px solid rgba(200,170,190,.3);
+      padding-top: 20px;
+      margin-top: 8px;
+    }
+
+    .note-label {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(11px, 1.5vw, 13px);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #c9b8e8;
+      margin-bottom: 24px;
+    }
+
+    /* ── Particle canvas (confetti + falling) ── */
+    #particle-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 300;
+    }
+
+    /* ── Decorative ring ── */
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid;
+      pointer-events: none;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 40px; height: 1px;
+      background: linear-gradient(90deg, transparent, #d4728a, transparent);
+      margin: 0 auto;
+    }
+
+    /* ── Back btn ── */
+    .back-btn {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      z-index: 100;
+    }
+
+    /* ── Scroll for letter on mobile ── */
+    #screen-letter { align-items: flex-start; padding: clamp(20px, 4vh, 60px) clamp(16px, 4vw, 32px); }
+    @media (max-width: 500px) {
+      #screen-letter { padding-bottom: 80px; }
+    }
+
+    /* ── GSAP initial states ── */
+    [data-gsap-init="fade"]   { opacity: 0; }
+    [data-gsap-init="fadeup"] { opacity: 0; transform: translateY(24px); }
+  </style>
+</head>
+
+<body>
+
+<!-- ══════════════════════════
+     PARTICLE CANVAS (global)
+══════════════════════════ -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- ══════════════════════════
+     MUSIC BUTTON
+══════════════════════════ -->
+<button class="music-btn" id="btn-music" style="display:none" title="Música">
+  <svg id="icon-music-on" viewBox="0 0 24 24" fill="none" stroke="#9c6880" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+  </svg>
+  <svg id="icon-music-off" viewBox="0 0 24 24" fill="none" stroke="#9c6880" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <line x1="2" y1="2" x2="22" y2="22"/><path d="M9 9v9"/><path d="M9 5l8.5-1.5v8"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+  </svg>
+</button>
+
+<!-- AUDIO -->
+<audio id="audio-bg" loop src="audio/aniver_piano.mp3" preload="auto"></audio>
+
+<!-- ══════════════════════════
+     SCREEN 1 — DOOR
+══════════════════════════ -->
+<div class="screen noise" id="screen-door">
+
+  <!-- soft ambient rings -->
+  <div class="ring" style="width:600px;height:600px;border-color:rgba(240,169,184,.12);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div class="ring" style="width:400px;height:400px;border-color:rgba(201,184,232,.14);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+
+  <div class="flex flex-col items-center gap-6" style="position:relative;z-index:2">
+
+    <!-- eyebrow label -->
+    <p data-gsap-init="fadeup" id="door-eyebrow"
+       style="font-family:'DM Sans',sans-serif;font-size:clamp(11px,1.5vw,13px);letter-spacing:.18em;text-transform:uppercase;color:#c9b8e8;opacity:0">
+      uma surpresa te espera
+    </p>
+
+    <!-- Door -->
+    <div class="door-outer" id="door-outer">
+      <div class="door-frame-border"></div>
+      <div class="door-scene-bg" id="door-scene-bg">
+        <svg width="60%" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" opacity=".4">
+          <circle cx="40" cy="40" r="38" stroke="#f0a9b8" stroke-width="1"/>
+          <text x="40" y="52" text-anchor="middle" font-size="32" font-family="serif">🎂</text>
+        </svg>
+      </div>
+      <div class="door-panel" id="door-panel">
+        <div class="door-knob"></div>
+        <div class="door-label">Bata na porta</div>
+      </div>
+    </div>
+
+    <!-- hint -->
+    <p data-gsap-init="fadeup" id="door-hint"
+       style="font-family:'Cormorant Garamond',serif;font-size:clamp(13px,1.8vw,16px);color:#b89aaa;font-style:italic;opacity:0">
+      clique para entrar
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     SCREEN 2 — PARTY
+══════════════════════════ -->
+<div class="screen noise" id="screen-party" style="opacity:0;pointer-events:none">
+
+  <div class="flex flex-col items-center text-center gap-5 px-6" style="position:relative;z-index:2;max-width:680px">
+
+    <!-- label -->
+    <p id="p-label" data-gsap-init="fade"
+       style="font-family:'DM Sans',sans-serif;font-size:clamp(10px,1.4vw,12px);letter-spacing:.2em;text-transform:uppercase;color:#c9b8e8;opacity:0">
+      hoje e um dia especial
+    </p>
+
+    <!-- Cat image -->
+    <div id="cat-wrap" data-gsap-init="fade" style="opacity:0">
+      <img src="img/cat_birth.jpeg" alt="Gatinho de aniversario" class="cat-img" id="cat-img" />
+    </div>
+
+    <!-- title -->
+    <div id="p-title-wrap" data-gsap-init="fadeup" style="opacity:0">
+      <h1 style="font-family:'Playfair Display',serif;font-size:clamp(22px,4.5vw,44px);color:#3d2b35;line-height:1.2;letter-spacing:-.01em">
+        Feliz Aniversario,<br>
+        <em style="font-style:italic;color:#d4728a" id="friend-name-el">Yasmin</em>
+      </h1>
+      <div class="divider" style="margin-top:16px"></div>
+    </div>
+
+    <!-- subtitle -->
+    <p id="p-sub" data-gsap-init="fadeup"
+       style="font-family:'Cormorant Garamond',serif;font-size:clamp(14px,2vw,18px);color:#7a5a68;line-height:1.7;max-width:420px;opacity:0">
+      Um dia so seu, repleto de amor, luz e tudo o que voce merece.
+    </p>
+
+    <!-- CTA -->
+    <div id="p-cta" data-gsap-init="fadeup" style="opacity:0;margin-top:8px">
+      <button class="btn-pill btn-primary" id="btn-letter">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,12 2,6"/>
+        </svg>
+        Abrir Bilhete
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     SCREEN 3 — LETTER
+══════════════════════════ -->
+<div class="screen noise" id="screen-letter" style="opacity:0;pointer-events:none">
+
+  <div class="flex flex-col items-center w-full gap-8" style="position:relative;z-index:2;max-width:640px;margin:0 auto">
+
+    <!-- Envelope (shown first) -->
+    <div id="envelope-stage" class="flex flex-col items-center gap-4">
+      <div class="envelope-wrap" id="envelope-wrap">
+        <svg viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="252" height="172" rx="14" fill="#fce8ee" stroke="#e8b0c0" stroke-width="1.5"/>
+          <!-- flap open -->
+          <path d="M4 4 L130 88 L256 4Z" fill="#f0a9b8" stroke="#e8b0c0" stroke-width="1.5"/>
+          <!-- side folds -->
+          <path d="M4 176 L88 100" stroke="#e8b0c0" stroke-width="1" opacity=".5"/>
+          <path d="M256 176 L172 100" stroke="#e8b0c0" stroke-width="1" opacity=".5"/>
+          <!-- seal -->
+          <circle cx="130" cy="110" r="20" fill="white" stroke="#e8b0c0" stroke-width="1"/>
+          <!-- heart inside seal -->
+          <path d="M130 120 C130 120 118 112 118 105 C118 101 121 98 125 98 C127 98 129 100 130 102 C131 100 133 98 135 98 C139 98 142 101 142 105 C142 112 130 120 130 120Z" fill="#f0a9b8"/>
+        </svg>
+        <p style="text-align:center;margin-top:10px;font-family:'DM Sans',sans-serif;font-size:clamp(11px,1.6vw,13px);letter-spacing:.1em;text-transform:uppercase;color:#c9b8e8">
+          clique para abrir
+        </p>
+      </div>
+    </div>
+
+    <!-- Note card (hidden initially) -->
+    <div class="note-card" id="note-card" style="display:none;opacity:0">
+      <p class="note-label">Uma mensagem para voce</p>
+
+      <div class="flex flex-col gap-5" id="messages-wrap">
+        <p class="note-line" id="nl-1"></p>
+        <p class="note-line" id="nl-2"></p>
+        <p class="note-line" id="nl-3"></p>
+        <p class="note-line" id="nl-4"></p>
+        <p class="note-line" id="nl-5"></p>
+        <p class="note-line" id="nl-6"></p>
+      </div>
+
+      <div class="note-final" id="note-final" style="opacity:0">
+        Um dia, o sol, iluminou meu coração.<br>
+        E se um dia, eu chorei,<br>
+        Você segurou minha mão.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Back -->
+  <div class="back-btn">
+    <button class="btn-pill btn-ghost" id="btn-back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Voltar a festa
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════
+     JAVASCRIPT
+══════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────
+   CONFIG
+───────────────────────────────────────── */
+const CONFIG = {
+  friendName: 'Beatriz Sena',
+  messages: [
+    'Beatriz Sena, hoje é seu dia, e mesmo com qualquer distância, jamais poderia deixar passar em branco.',
+    'Você é alguém repleta de energia, que traz a felicidade consigo onde quer que passe.',
+    'Assim como o sol, a sua presença ilumina o dia e aquece os corações.',
+    'Eu mal imaginava que poderia existir alguém como você — cada momento, conversa e abraço foi especial para mim.',
+    'Que pessoa amável e marcante você é. Que esse ano traga tudo que merece: saúde, paz, amor e tudo mais que você possa sonhar.',
+    'O te conhecer foi essencial em minha vida. Provérbios 31:10-12'
+  ]
+};
+
+/* ─────────────────────────────────────────
+   DOM refs
+───────────────────────────────────────── */
+const doorPanel      = document.getElementById('door-panel');
+const doorOuter      = document.getElementById('door-outer');
+const scrDoor        = document.getElementById('screen-door');
+const scrParty       = document.getElementById('screen-party');
+const scrLetter      = document.getElementById('screen-letter');
+const btnLetter      = document.getElementById('btn-letter');
+const btnBack        = document.getElementById('btn-back');
+const envelopeWrap   = document.getElementById('envelope-wrap');
+const noteCard       = document.getElementById('note-card');
+const noteFinal      = document.getElementById('note-final');
+const audioBg        = document.getElementById('audio-bg');
+const btnMusic       = document.getElementById('btn-music');
+const iconOn         = document.getElementById('icon-music-on');
+const iconOff        = document.getElementById('icon-music-off');
+const pCanvas        = document.getElementById('particle-canvas');
+const ctx2d          = pCanvas.getContext('2d');
+
+/* set friend name */
+document.getElementById('friend-name-el').textContent = CONFIG.friendName;
+
+/* ─────────────────────────────────────────
+   GSAP CustomEase
+───────────────────────────────────────── */
+CustomEase.create('smooth', 'M0,0 C0.25,0.1 0.25,1 1,1');
+CustomEase.create('bounce', 'M0,0 C0.34,1.56 0.64,1 1,1');
+
+/* ─────────────────────────────────────────
+   PARTICLE CANVAS
+───────────────────────────────────────── */
+let particles = [];
+let particleRAF;
+
+function resizeCanvas() {
+  pCanvas.width  = window.innerWidth;
+  pCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+const HEART_PATH = new Path2D('M 0,-8 C 0,-8 -10,-18 -18,-10 C -26,-2 -10,10 0,20 C 10,10 26,-2 18,-10 C 10,-18 0,-8 0,-8 Z');
+
+class Particle {
+  constructor(type='confetti') {
+    this.type   = type;
+    this.reset(true);
+  }
+  reset(initial=false) {
+    this.x     = Math.random() * pCanvas.width;
+    this.y     = initial ? Math.random() * pCanvas.height - pCanvas.height : -30;
+    this.vx    = (Math.random()-.5) * 1.8;
+    this.vy    = Math.random() * 1.4 + .7;
+    this.size  = this.type === 'heart' ? (Math.random() * 8 + 6) : (Math.random() * 8 + 4);
+    this.rot   = Math.random() * Math.PI * 2;
+    this.rotV  = (Math.random()-.5) * .06;
+    this.alpha = Math.random() * .5 + .3;
+    const palettes = {
+      confetti: ['#f0a9b8','#c9b8e8','#a8d4c9','#ffd8a8','#f7c5cf','#b8d4c9'],
+      heart:    ['#f0a9b8','#e06b9a','#d4728a','#c9b8e8','#f7c5cf']
+    };
+    const pal = palettes[this.type];
+    this.color = pal[Math.floor(Math.random() * pal.length)];
+  }
+  update() {
+    this.x   += this.vx;
+    this.y   += this.vy;
+    this.rot += this.rotV;
+    if (this.y > pCanvas.height + 40) this.reset();
+  }
+  draw(ctx) {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot);
+    ctx.fillStyle = this.color;
+
+    if (this.type === 'heart') {
+      const s = this.size / 20;
+      ctx.scale(s, s);
+      ctx.fill(HEART_PATH);
+    } else {
+      /* confetti rect or circle */
+      if (Math.random() > .6) {
+        ctx.fillRect(-this.size/2, -this.size/4, this.size, this.size/2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size/2.5, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+}
+
+function spawnParticles(n, type) {
+  for (let i=0; i<n; i++) particles.push(new Particle(type));
+}
+
+function runParticles() {
+  ctx2d.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  particles.forEach(p => { p.update(); p.draw(ctx2d); });
+  particleRAF = requestAnimationFrame(runParticles);
+}
+
+function clearParticles() {
+  cancelAnimationFrame(particleRAF);
+  particles = [];
+  ctx2d.clearRect(0, 0, pCanvas.width, pCanvas.height);
+}
+
+/* ─────────────────────────────────────────
+   AUDIO
+───────────────────────────────────────── */
+let musicPlaying = false;
+
+function tryPlayMusic() {
+  audioBg.volume = 0;
+  const p = audioBg.play();
+  if (p) p.then(() => {
+    gsap.to(audioBg, { volume: 0.45, duration: 2 });
+    musicPlaying = true;
+    iconOn.style.display  = '';
+    iconOff.style.display = 'none';
+  }).catch(()=>{});
+}
+
+btnMusic.addEventListener('click', () => {
+  if (musicPlaying) {
+    gsap.to(audioBg, { volume: 0, duration: .8, onComplete: () => audioBg.pause() });
+    musicPlaying = false;
+    iconOn.style.display  = 'none';
+    iconOff.style.display = '';
+  } else {
+    audioBg.play();
+    gsap.to(audioBg, { volume: 0.45, duration: 1 });
+    musicPlaying = true;
+    iconOn.style.display  = '';
+    iconOff.style.display = 'none';
+  }
+});
+
+/* ─────────────────────────────────────────
+   KNOCK SOUND (Web Audio)
+───────────────────────────────────────── */
+let actx;
+function knock() {
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  [0, .13, .26].forEach(d => {
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.connect(g); g.connect(actx.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(240, actx.currentTime + d);
+    o.frequency.exponentialRampToValueAtTime(100, actx.currentTime + d + .09);
+    g.gain.setValueAtTime(.3, actx.currentTime + d);
+    g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d + .13);
+    o.start(actx.currentTime + d);
+    o.stop(actx.currentTime + d + .16);
+  });
+}
+
+/* ─────────────────────────────────────────
+   SCREEN 1 — Door entrance animation
+───────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  const tl = gsap.timeline({ delay: .3 });
+  tl.from('#door-outer', { opacity:0, y: 30, duration: .9, ease: 'smooth' })
+    .to('#door-eyebrow',  { opacity:1, y:0, duration:.7, ease:'smooth' }, .2)
+    .to('#door-hint',     { opacity:1, y:0, duration:.7, ease:'smooth' }, .5);
+
+  // gentle wobble hint
+  gsap.to('#door-panel', {
+    rotateY: -5, duration: 2.5,
+    ease: 'sine.inOut', repeat: -1, yoyo: true,
+    transformOrigin: 'left center'
+  });
+});
+
+/* Door hover */
+doorOuter.addEventListener('mouseenter', () => {
+  gsap.killTweensOf('#door-panel', 'rotateY');
+  gsap.to('#door-panel', { rotateY: -8, duration:.35, ease:'power2.out' });
+});
+doorOuter.addEventListener('mouseleave', () => {
+  gsap.to('#door-panel', {
+    rotateY: -5, duration: 2.5,
+    ease:'sine.inOut', repeat:-1, yoyo:true,
+    transformOrigin:'left center'
+  });
+});
+
+/* Door click */
+doorPanel.addEventListener('click', () => {
+  knock();
+  gsap.killTweensOf('#door-panel');
+
+  const tl = gsap.timeline();
+  // door swings open
+  tl.to('#door-panel', {
+    rotateY: -105, duration: .85,
+    ease: 'power3.inOut', transformOrigin: 'left center'
+  })
+  // fade out door screen
+  .to(scrDoor, { opacity: 0, duration: .5, ease: 'power2.in' }, .6)
+  // fade in party screen
+  .call(() => {
+    scrDoor.style.pointerEvents  = 'none';
+    scrParty.style.pointerEvents = 'auto';
+    gsap.to(scrParty, { opacity: 1, duration: .01 });
+    btnMusic.style.display = 'flex';
+    tryPlayMusic();
+    animatePartyEntrance();
+  });
+});
+
+/* ─────────────────────────────────────────
+   SCREEN 2 — Party entrance
+───────────────────────────────────────── */
+function animatePartyEntrance() {
+  /* start confetti */
+  spawnParticles(90, 'confetti');
+  runParticles();
+
+  const tl = gsap.timeline();
+  tl.to('#p-label',      { opacity:1, duration:.6, ease:'smooth' }, .1)
+    .to('#cat-wrap',     { opacity:1, y:0, duration:.8, ease:'bounce' }, .3)
+    .to('#p-title-wrap', { opacity:1, y:0, duration:.7, ease:'smooth' }, .7)
+    .to('#p-sub',        { opacity:1, y:0, duration:.6, ease:'smooth' }, 1.0)
+    .to('#p-cta',        { opacity:1, y:0, duration:.6, ease:'smooth' }, 1.3);
+
+  // cat gentle float
+  gsap.to('#cat-img', {
+    y: -10, duration: 2.8,
+    ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 1.5
+  });
+}
+
+/* ─────────────────────────────────────────
+   Open letter
+───────────────────────────────────────── */
+btnLetter.addEventListener('click', () => {
+  clearParticles();
+
+  const tl = gsap.timeline();
+  tl.to(scrParty, { opacity:0, duration:.45, ease:'power2.in' })
+    .call(() => {
+      scrParty.style.pointerEvents  = 'none';
+      scrLetter.style.pointerEvents = 'auto';
+      gsap.to(scrLetter, { opacity:1, duration:.01 });
+      animateLetterEntrance();
+    });
+});
+
+/* ─────────────────────────────────────────
+   SCREEN 3 — Letter entrance
+───────────────────────────────────────── */
+function animateLetterEntrance() {
+  /* falling hearts */
+  spawnParticles(55, 'heart');
+  runParticles();
+
+  gsap.from('#envelope-stage', { opacity:0, y:30, duration:.7, ease:'smooth', delay:.2 });
+}
+
+/* Envelope click → open */
+envelopeWrap.addEventListener('click', openEnvelope);
+
+function openEnvelope() {
+  envelopeWrap.style.pointerEvents = 'none';
+
+  gsap.to('#envelope-stage', {
+    scale: 1.08, y: -10, duration: .25, ease:'power2.in',
+    onComplete: () => {
+      gsap.to('#envelope-stage', {
+        scale: 0, opacity: 0, y: -30, duration: .45, ease:'power3.in',
+        onComplete: () => {
+          document.getElementById('envelope-stage').style.display = 'none';
+          noteCard.style.display = 'block';
+          gsap.to(noteCard, {
+            opacity: 1, y: 0, duration: .65, ease:'smooth',
+            onComplete: () => typeMessages()
+          });
+          gsap.from(noteCard, { y: 28 });
+        }
+      });
+    }
+  });
+}
+
+/* ─────────────────────────────────────────
+   Typewriter
+───────────────────────────────────────── */
+function typeMessages() {
+  const ids  = ['nl-1','nl-2','nl-3','nl-4','nl-5','nl-6'];
+  const msgs = CONFIG.messages;
+  let mi     = 0;
+
+  function typeNext() {
+    if (mi >= msgs.length) {
+      setTimeout(() => {
+        gsap.to(noteFinal, { opacity:1, y:0, duration:.8, ease:'smooth' });
+        gsap.from(noteFinal, { y:12 });
+      }, 500);
+      return;
+    }
+    const el   = document.getElementById(ids[mi]);
+    const text = msgs[mi];
+    el.classList.add('typing');
+    let ci = 0;
+    const iv = setInterval(() => {
+      el.textContent = text.slice(0, ++ci);
+      if (ci >= text.length) {
+        clearInterval(iv);
+        el.classList.remove('typing');
+        mi++;
+        setTimeout(typeNext, 600);
+      }
+    }, 28);
+  }
+  typeNext();
+}
+
+/* ─────────────────────────────────────────
+   Back button
+───────────────────────────────────────── */
+btnBack.addEventListener('click', () => {
+  clearParticles();
+
+  const tl = gsap.timeline();
+  tl.to(scrLetter, { opacity:0, duration:.4, ease:'power2.in' })
+    .call(() => {
+      scrLetter.style.pointerEvents = 'none';
+      resetLetterScreen();
+      scrParty.style.pointerEvents  = 'auto';
+      gsap.to(scrParty, { opacity:1, duration:.5, ease:'smooth' });
+      spawnParticles(90, 'confetti');
+      runParticles();
+    });
+});
+
+function resetLetterScreen() {
+  document.getElementById('envelope-stage').style.display = 'flex';
+  envelopeWrap.style.pointerEvents = 'auto';
+  noteCard.style.display = 'none';
+  noteCard.style.opacity = '0';
+  noteFinal.style.opacity = '0';
+  ['nl-1','nl-2','nl-3','nl-4','nl-5','nl-6'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.remove('typing');
+  });
+  gsap.set('#envelope-stage', { scale:1, y:0, opacity:1 });
+  gsap.from('#envelope-stage', { opacity:0, y:24, duration:.6, delay:.3, ease:'smooth' });
+}
+</script>
+
+</body>
+</html>
