@@ -303,6 +303,16 @@
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       z-index: 100;
     }
+    @media (max-width: 500px) {
+      .back-btn .btn-pill {
+        padding: 7px 14px;
+        font-size: 11px;
+        gap: 4px;
+      }
+      .back-btn .btn-pill svg {
+        width: 10px; height: 10px;
+      }
+    }
 
     /* ── Scroll for letter on mobile ── */
     #screen-letter { align-items: flex-start; padding: clamp(20px, 4vh, 60px) clamp(16px, 4vw, 32px); }
@@ -497,11 +507,11 @@
 const CONFIG = {
   friendName: 'Beatriz Sena',
   messages: [
-    'Beatriz Sena, hoje é seu dia, e mesmo com qualquer distância, jamais poderia deixar passar em branco.',
+    'Beatriz Sena, hoje é seu dia, e existe tantas coisas que gostaria de falar, mas me limitarei.',
     'Você é alguém repleta de energia, que traz a felicidade consigo onde quer que passe.',
     'Assim como o sol, a sua presença ilumina o dia e aquece os corações.',
-    'Eu mal imaginava que poderia existir alguém como você — cada momento, conversa e abraço foi especial para mim.',
-    'Que pessoa amável e marcante você é. Que esse ano traga tudo que merece: saúde, paz, amor e tudo mais que você possa sonhar.',
+    'Eu mal imaginava que poderia existir alguém como você. Cada momento, conversa e abraço foi especial para mim.',
+    'Que pessoa amável e marcante você é. Não te desejo nada menos que a felicidade, que o Amor de Cristo esteja com você',
     'O te conhecer foi essencial em minha vida. Provérbios 31:10-12'
   ]
 };
