@@ -474,6 +474,7 @@
         <p class="note-line" id="nl-4"></p>
         <p class="note-line" id="nl-5"></p>
         <p class="note-line" id="nl-6"></p>
+        <p class="note-line" id="nl-7"></p>
       </div>
 
       <div class="note-final" id="note-final" style="opacity:0">
@@ -812,7 +813,7 @@ function openEnvelope() {
    Typewriter
 ───────────────────────────────────────── */
 function typeMessages() {
-  const ids  = ['nl-1','nl-2','nl-3','nl-4','nl-5','nl-6'];
+  const ids  = ['nl-1','nl-2','nl-3','nl-4','nl-5','nl-6','nl-7'];
   const msgs = CONFIG.messages;
   let mi     = 0;
 
@@ -865,7 +866,7 @@ function resetLetterScreen() {
   noteCard.style.display = 'none';
   noteCard.style.opacity = '0';
   noteFinal.style.opacity = '0';
-  ['nl-1','nl-2','nl-3','nl-4','nl-5','nl-6'].forEach(id => {
+  ['nl-1','nl-2','nl-3','nl-4','nl-5','nl-6','nl-7'].forEach(id => {
     const el = document.getElementById(id);
     el.textContent = '';
     el.classList.remove('typing');
