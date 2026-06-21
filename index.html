@@ -304,6 +304,13 @@
       z-index: 100;
     }
     @media (max-width: 500px) {
+      .back-btn {
+        position: static;
+        transform: none;
+        display: flex;
+        justify-content: center;
+        margin: 24px 0 8px;
+      }
       .back-btn .btn-pill {
         padding: 7px 14px;
         font-size: 11px;
@@ -484,17 +491,18 @@
       </div>
     </div>
 
+    <!-- Back (inline no mobile, fixed no desktop) -->
+    <div class="back-btn">
+      <button class="btn-pill btn-ghost" id="btn-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Voltar a festa
+      </button>
+    </div>
+
   </div>
 
-  <!-- Back -->
-  <div class="back-btn">
-    <button class="btn-pill btn-ghost" id="btn-back">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      Voltar a festa
-    </button>
-  </div>
 </div>
 
 
